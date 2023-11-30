@@ -3,48 +3,41 @@
 import OpenAI from 'openai';
 import readline from 'readline';
 
-// gets API Key from environment variable OPENAI_API_KEY
-const openai = new OpenAI();
-
-// create readline interface for user input
+const MODEL = 'gpt-4-1106-preview';
+const USER = 'user';
+const GREETING = 'Hello! How can I help?';
+const FAREWELL = 'Talk to you later!';
+const ASSISTANT_HANDLE = 'Dekart: ';
+const USER_HANDLE = 'User: ';
+const EXIT = 'exit';
+const NEWLINE = '\n';
+const EMPTY = '';
+const openai = new OpenAI(); // gets API key from environment variable OPENAI_API_KEY
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
 
 async function askQuestion() {
-  rl.question('\nUser: ', async function (userInput) {
-    // Check if the user wants to exit the chat
-    if (userInput.trim().toLowerCase() === 'exit') {
-      console.log('\nDekart: Talk to you later!\n');
+  rl.question(NEWLINE + USER_HANDLE, async function (userInput) {
+    if (userInput.trim().toLowerCase() === EXIT) {
+      console.log(NEWLINE.concat(ASSISTANT_HANDLE).concat(FAREWELL).concat(NEWLINE));
       rl.close();
       return;
     }
-
-    try {
-      const stream = await openai.chat.completions.create({
-        model: 'gpt-4',
-        messages: [{ role: 'user', content: userInput }],
-        stream: true,
-      });
-
-      process.stdout.write('\nDekart: ');
-      for await (const chunk of stream) {
-        process.stdout.write(chunk.choices[0]?.delta?.content || '');
-      }
-      process.stdout.write('\n'); // Add a new line before prompting the user again
-    } catch (error) {
-      console.error('Error:', error);
+    const stream = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [{ role: USER, content: userInput }],
+      stream: true,
+    });
+    process.stdout.write(NEWLINE + ASSISTANT_HANDLE);
+    for await (const chunk of stream) {
+      process.stdout.write(chunk.choices[0]?.delta?.content || EMPTY);
     }
-
-    askQuestion(); // Call askQuestion again to prompt for new input
+    process.stdout.write(NEWLINE);
+    askQuestion(); // recursion
   });
 }
 
-function main() {
-  console.log('\nDekart: Hello, I\'m Dekart! How can I assist you today?');
-  askQuestion(); // Start the input prompt loop
-}
-
-main();
-
+console.log(NEWLINE.concat(ASSISTANT_HANDLE).concat(GREETING));
+askQuestion();
