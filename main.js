@@ -5,13 +5,18 @@ import readline from 'readline';
 
 const MODEL = 'gpt-4-1106-preview';
 const USER = 'user';
+const ASSISTANT = 'assistant';
 const GREETING = 'Hello! How can I help?';
 const FAREWELL = 'Talk to you later!';
-const ASSISTANT_HANDLE = 'Dekart: ';
-const USER_HANDLE = 'User: ';
+const ANSI_RESET = '\x1b[0m';
+const ANSI_FG_WHITE_BG_GREEN = '\x1b[37;42m';
+const ANSI_FG_WHITE_BG_MAGENTA = '\x1b[37;45m';
+const ASSISTANT_HANDLE = ANSI_FG_WHITE_BG_MAGENTA + 'Dekart' + ANSI_RESET + ' ';
+const USER_HANDLE = ANSI_FG_WHITE_BG_GREEN + 'User' + ANSI_RESET + ' ';
 const EXIT = 'exit';
 const NEWLINE = '\n';
 const EMPTY = '';
+const history = [];
 const openai = new OpenAI(); // gets API key from environment variable OPENAI_API_KEY
 const rl = readline.createInterface({
   input: process.stdin,
@@ -25,15 +30,21 @@ async function askQuestion() {
       rl.close();
       return;
     }
+    history.push({role: USER, content: userInput});
     const stream = await openai.chat.completions.create({
       model: MODEL,
-      messages: [{ role: USER, content: userInput }],
+      messages: history,
       stream: true,
     });
     process.stdout.write(NEWLINE + ASSISTANT_HANDLE);
     for await (const chunk of stream) {
-      process.stdout.write(chunk.choices[0]?.delta?.content || EMPTY);
+      const assistantResponse = chunk.choices[0]?.delta?.content || EMPTY;
+      process.stdout.write(assistantResponse);
+      if (assistantResponse) {
+        history.push({ role: ASSISTANT, content: assistantResponse });
+      }
     }
+    
     process.stdout.write(NEWLINE);
     askQuestion(); // recursion
   });
