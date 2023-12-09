@@ -17,11 +17,19 @@ const EXIT = 'exit';
 const NEWLINE = '\n';
 const EMPTY = '';
 const history = [];
+const MAX_HISTORY_LENGTH = 10;
 const openai = new OpenAI(); // gets API key from environment variable OPENAI_API_KEY
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
+
+function addToHistory(role, content) {
+  history.push({ role, content });
+  if (history.length > MAX_HISTORY_LENGTH) {
+    history.shift();
+  }
+}
 
 async function askQuestion() {
   rl.question(NEWLINE + USER_HANDLE, async function (userInput) {
@@ -30,7 +38,7 @@ async function askQuestion() {
       rl.close();
       return;
     }
-    history.push({role: USER, content: userInput});
+    addToHistory(USER, userInput);
     const stream = await openai.chat.completions.create({
       model: MODEL,
       messages: history,
@@ -41,10 +49,9 @@ async function askQuestion() {
       const assistantResponse = chunk.choices[0]?.delta?.content || EMPTY;
       process.stdout.write(assistantResponse);
       if (assistantResponse) {
-        history.push({ role: ASSISTANT, content: assistantResponse });
+        addToHistory(ASSISTANT, assistantResponse);
       }
     }
-    
     process.stdout.write(NEWLINE);
     askQuestion(); // recursion
   });
