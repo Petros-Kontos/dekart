@@ -10,7 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "openai": "^4.20.1"
+    "openai": "^4.20.1",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.6"
   },
   "bin": {
     "dekart": "./main.js"
