@@ -5,6 +5,7 @@ import readline from 'readline';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 
+const NEWLINE = '\n';
 const MODEL = 'gpt-4-1106-preview';
 const USER = 'user';
 const ASSISTANT = 'assistant';
@@ -14,18 +15,17 @@ const ANSI_RESET = '\x1b[0m';
 const ANSI_FG_WHITE_BG_GREEN = '\x1b[37;42m';
 const ANSI_FG_WHITE_BG_MAGENTA = '\x1b[37;45m';
 const ASSISTANT_HANDLE = ANSI_FG_WHITE_BG_MAGENTA + 'Dekart' + ANSI_RESET + ' ';
-const USER_HANDLE = ANSI_FG_WHITE_BG_GREEN + 'User' + ANSI_RESET + ' ';
+const USER_HANDLE = NEWLINE + ANSI_FG_WHITE_BG_GREEN + 'User' + ANSI_RESET + ' ';
 const EXIT = 'exit';
-const NEWLINE = '\n';
 const openai = new OpenAI(); // gets API key from environment variable OPENAI_API_KEY
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
 
-// SQLite setup
 let db;
-async function setupDatabase() {
+
+async function setupDB() {
   db = await open({
     filename: 'chat_history.db',
     driver: sqlite3.Database
@@ -33,31 +33,24 @@ async function setupDatabase() {
   await db.run("CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT, content TEXT)");
 }
 
-async function addToHistory(role, content) {
-  await db.run("INSERT INTO history (role, content) VALUES (?, ?)", [role, content]);
-}
-
-async function getRecentHistory() {
+async function selectFromDB() {
   const history = await db.all("SELECT role, content FROM history ORDER BY id DESC LIMIT 10");
   return history.reverse();
 }
 
-async function start() {
-  await setupDatabase();
-  let history = await getRecentHistory();
-  console.log(NEWLINE.concat(ASSISTANT_HANDLE).concat(GREETING));
-  askQuestion(history);
+async function insertToDB(role, content) {
+  await db.run("INSERT INTO history (role, content) VALUES (?, ?)", [role, content]);
 }
 
-async function askQuestion(history) {
-  rl.question(NEWLINE + USER_HANDLE, async function (userInput) {
-    if (userInput.trim().toLowerCase() === EXIT) {
+async function askLM() {
+  rl.question(USER_HANDLE, async function (input) {
+    if (input.trim().toLowerCase() === EXIT) {
       console.log(NEWLINE.concat(ASSISTANT_HANDLE).concat(FAREWELL).concat(NEWLINE));
       rl.close();
       return;
     }
-    await addToHistory(USER, userInput);
-    history.push({ role: USER, content: userInput });
+    await insertToDB(USER, input);
+    let history = await selectFromDB();
     if (history.length > 10) {
       history.shift(); // Keep only the most recent entries
     }
@@ -66,18 +59,23 @@ async function askQuestion(history) {
       messages: history,
       stream: true,
     });
+    let assistantFullResponse = '';
     process.stdout.write(NEWLINE + ASSISTANT_HANDLE);
     for await (const chunk of stream) {
-      const assistantResponse = chunk.choices[0]?.delta?.content || '';
-      process.stdout.write(assistantResponse);
-      if (assistantResponse) {
-        await addToHistory(ASSISTANT, assistantResponse);
-        history.push({ role: ASSISTANT, content: assistantResponse });
-      }
+      const assistantPartialResponse = chunk.choices[0]?.delta?.content || '';
+      process.stdout.write(assistantPartialResponse);
+      assistantFullResponse += assistantPartialResponse;
     }
     process.stdout.write(NEWLINE);
-    askQuestion(history); // recursion with updated history
+    await insertToDB(ASSISTANT, assistantFullResponse);
+    askLM(); // recursion
   });
 }
 
-start();
+async function execute() {
+  await setupDB();
+  console.log(NEWLINE.concat(ASSISTANT_HANDLE).concat(GREETING));
+  askLM();
+}
+
+execute();
