@@ -17,6 +17,10 @@ const ANSI_FG_WHITE_BG_MAGENTA = '\x1b[37;45m';
 const ASSISTANT_HANDLE = ANSI_FG_WHITE_BG_MAGENTA + 'Dekart' + ANSI_RESET + ' ';
 const USER_HANDLE = NEWLINE + ANSI_FG_WHITE_BG_GREEN + 'User' + ANSI_RESET + ' ';
 const EXIT = 'exit';
+const DB_FILE_NAME = process.env.DEKART_DB_PATH;
+const SQL_CREATE = "CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT, content TEXT)";
+const SQL_SELECT = "SELECT role, content FROM history ORDER BY id DESC LIMIT 100";
+const SQL_INSERT = "INSERT INTO history (role, content) VALUES (?, ?)";
 const openai = new OpenAI(); // gets API key from environment variable OPENAI_API_KEY
 const rl = readline.createInterface({
   input: process.stdin,
@@ -27,22 +31,22 @@ let db;
 
 async function setupDB() {
   db = await open({
-    filename: 'chat_history.db',
+    filename: DB_FILE_NAME,
     driver: sqlite3.Database
   });
-  await db.run("CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT, content TEXT)");
+  await db.run(SQL_CREATE);
 }
 
 async function selectFromDB() {
-  const history = await db.all("SELECT role, content FROM history ORDER BY id DESC LIMIT 10");
+  const history = await db.all(SQL_SELECT);
   return history.reverse();
 }
 
 async function insertToDB(role, content) {
-  await db.run("INSERT INTO history (role, content) VALUES (?, ?)", [role, content]);
+  await db.run(SQL_INSERT, [role, content]);
 }
 
-async function askLM() {
+async function repl() {
   rl.question(USER_HANDLE, async function (input) {
     if (input.trim().toLowerCase() === EXIT) {
       console.log(NEWLINE.concat(ASSISTANT_HANDLE).concat(FAREWELL).concat(NEWLINE));
@@ -51,9 +55,6 @@ async function askLM() {
     }
     await insertToDB(USER, input);
     let history = await selectFromDB();
-    if (history.length > 10) {
-      history.shift(); // Keep only the most recent entries
-    }
     const stream = await openai.chat.completions.create({
       model: MODEL,
       messages: history,
@@ -68,14 +69,14 @@ async function askLM() {
     }
     process.stdout.write(NEWLINE);
     await insertToDB(ASSISTANT, assistantFullResponse);
-    askLM(); // recursion
+    repl(); // recursion
   });
 }
 
-async function execute() {
-  await setupDB();
+async function main() {
   console.log(NEWLINE.concat(ASSISTANT_HANDLE).concat(GREETING));
-  askLM();
+  await setupDB();
+  repl();
 }
 
-execute();
+main();
