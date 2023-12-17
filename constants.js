@@ -10,7 +10,4 @@ export const ANSI_FG_WHITE_BG_MAGENTA = '\x1b[37;45m';
 export const ASSISTANT_HANDLE = ANSI_FG_WHITE_BG_MAGENTA + 'Dekart' + ANSI_RESET + ' ';
 export const USER_HANDLE = NEWLINE + ANSI_FG_WHITE_BG_GREEN + 'User' + ANSI_RESET + ' ';
 export const DB_FILE_NAME = process.env.DEKART_DB_PATH;
-export const SQL_CREATE = "CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT, content TEXT)";
-export const SQL_SELECT = "SELECT role, content FROM history ORDER BY id DESC LIMIT 100";
-export const SQL_INSERT = "INSERT INTO history (role, content) VALUES (?, ?)";
 export const EXIT = 'exit';
