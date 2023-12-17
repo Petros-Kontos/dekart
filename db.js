@@ -1,13 +1,11 @@
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 
-import { DB_FILE_NAME, SQL_CREATE, SQL_SELECT, SQL_INSERT } from './constants.js';
-
 let db;
 
 export async function setupDB() {
     db = await open({
-        filename: DB_FILE_NAME,
+        filename: process.env.DEKART_DB_PATH,
         driver: sqlite3.Database
     });
     await db.run("CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT, content TEXT)");

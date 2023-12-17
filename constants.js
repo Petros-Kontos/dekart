@@ -9,5 +9,4 @@ export const ANSI_FG_WHITE_BG_GREEN = '\x1b[37;42m';
 export const ANSI_FG_WHITE_BG_MAGENTA = '\x1b[37;45m';
 export const ASSISTANT_HANDLE = ANSI_FG_WHITE_BG_MAGENTA + 'Dekart' + ANSI_RESET + ' ';
 export const USER_HANDLE = NEWLINE + ANSI_FG_WHITE_BG_GREEN + 'User' + ANSI_RESET + ' ';
-export const DB_FILE_NAME = process.env.DEKART_DB_PATH;
 export const EXIT = 'exit';
