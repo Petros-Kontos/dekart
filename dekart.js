@@ -2,49 +2,15 @@
 
 import OpenAI from 'openai';
 import readline from 'readline';
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
 
-const NEWLINE = '\n';
-const MODEL = 'gpt-4-1106-preview';
-const USER = 'user';
-const ASSISTANT = 'assistant';
-const GREETING = 'Hello! How can I help?';
-const FAREWELL = 'Talk to you later!';
-const ANSI_RESET = '\x1b[0m';
-const ANSI_FG_WHITE_BG_GREEN = '\x1b[37;42m';
-const ANSI_FG_WHITE_BG_MAGENTA = '\x1b[37;45m';
-const ASSISTANT_HANDLE = ANSI_FG_WHITE_BG_MAGENTA + 'Dekart' + ANSI_RESET + ' ';
-const USER_HANDLE = NEWLINE + ANSI_FG_WHITE_BG_GREEN + 'User' + ANSI_RESET + ' ';
-const EXIT = 'exit';
-const DB_FILE_NAME = process.env.DEKART_DB_PATH;
-const SQL_CREATE = "CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT, content TEXT)";
-const SQL_SELECT = "SELECT role, content FROM history ORDER BY id DESC LIMIT 100";
-const SQL_INSERT = "INSERT INTO history (role, content) VALUES (?, ?)";
+import { setupDB, selectFromDB, insertToDB } from './db.js';
+import { NEWLINE, MODEL, USER, ASSISTANT, GREETING, FAREWELL, ASSISTANT_HANDLE, USER_HANDLE, EXIT} from './constants.js';
+
 const openai = new OpenAI(); // gets API key from environment variable OPENAI_API_KEY
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
-
-let db;
-
-async function setupDB() {
-  db = await open({
-    filename: DB_FILE_NAME,
-    driver: sqlite3.Database
-  });
-  await db.run(SQL_CREATE);
-}
-
-async function selectFromDB() {
-  const history = await db.all(SQL_SELECT);
-  return history.reverse();
-}
-
-async function insertToDB(role, content) {
-  await db.run(SQL_INSERT, [role, content]);
-}
 
 async function repl() {
   rl.question(USER_HANDLE, async function (input) {
