@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-
 import { MODEL} from './constants.js';
 
 const openai = new OpenAI();

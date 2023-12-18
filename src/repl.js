@@ -1,9 +1,7 @@
+import readline from 'readline';
+import { askLM } from './lm.js';
 import { selectFromDB, insertToDB } from './db.js';
 import { NEWLINE, USER, ASSISTANT, FAREWELL, ASSISTANT_HANDLE, USER_HANDLE, EXIT_COMMAND } from './constants.js';
-
-import { askLM } from './lm.js';
-
-import readline from 'readline';
 
 const rl = readline.createInterface({
   input: process.stdin,
