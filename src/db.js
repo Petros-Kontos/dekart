@@ -12,7 +12,7 @@ export async function setupDB() {
 }
 
 export async function selectFromDB() {
-    const history = await db.all("SELECT role, content FROM history ORDER BY id DESC LIMIT 100");
+    const history = await db.all("SELECT role, content FROM history ORDER BY id DESC LIMIT 20");
     return history.reverse();
 }
 
