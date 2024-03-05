@@ -6,7 +6,7 @@
 docker build -t dekart_image . --no-cache
 ```
 ```
-docker create --name dekart_container -it --env OPENAI_API_KEY=*your api key here* dekart_image
+docker create --name dekart_container -it --env OPENAI_API_KEY=_your api key here_ dekart_image
 ```
 ```
 docker start dekart_container
