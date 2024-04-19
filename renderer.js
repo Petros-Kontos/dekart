@@ -1,32 +1,57 @@
 const { ipcRenderer } = require('electron');
 
 let response;
+let preIdCounter = 0;
+let pIdCounter = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('prompt');
-    if (input) {
-        input.focus();
-    }
+    document.getElementsByTagName('input')[0].focus();
 });
 
 document.getElementById('form').addEventListener('submit', async (event) => {
+    
     event.preventDefault();
-    const prompt = document.getElementById('prompt').value.trim();
-    document.getElementById('prompt').value = '';
-    if (prompt === '') {return;}
+    const input = document.getElementsByTagName('input')[0].value.trim();    
+    document.getElementsByTagName('input')[0].value = '';
+    if (input === '') { return; }
+    
     const messages = document.getElementById('messages');
-    const promptDiv = document.createElement('div');
-    promptDiv.textContent = prompt;
-    promptDiv.className = 'promptDiv';
-    messages.appendChild(promptDiv);
-    const history = [{ role: 'user', content: prompt }];
-    ipcRenderer.send('userMessage', history);
+    const prompt = document.createElement('p');
+    prompt.textContent = input;
+    messages.appendChild(prompt);
+    ipcRenderer.send('userMsg', [{ role: 'user', content: input }]);
     response = document.createElement('div');
     messages.appendChild(response);
+    
+    startParagraph();
 });
 
-ipcRenderer.on('llmMessage', (event, message) => {
-    if (response) {
-        response.textContent += message;
+ipcRenderer.on('backticks', (event, msg, insideCodeBlock) => {
+    if (insideCodeBlock) {
+        startParagraph();
+    } else {
+        startCodeBlock();
     }
 });
+
+ipcRenderer.on('llmMsg', (event, msg, insideCodeBlock) => {
+    let container;
+    if (insideCodeBlock) {
+        container = document.getElementById("pre" + (preIdCounter - 1));
+    } else {
+        container = document.getElementById("p" + (pIdCounter - 1));
+    }
+    container.textContent += msg;
+});
+
+function startParagraph() {
+    const p = document.createElement('p');
+    p.id = "p" + pIdCounter++;
+    response.appendChild(p);
+}
+
+function startCodeBlock() {
+    const pre = document.createElement('pre');
+    pre.id = "pre" + preIdCounter++;
+    response.appendChild(pre);
+}

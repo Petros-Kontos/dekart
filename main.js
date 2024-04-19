@@ -1,13 +1,16 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { OpenAI } = require('openai');
 const MODEL = 'gpt-4-1106-preview';
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-});
+const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY});
+
+let expectSingleBacktick = false;
+let insideCodeBlock = false;
+
 function createWindow() {
     const mainWindow = new BrowserWindow({
         width: 1200,
         height: 600,
+        // frame: false,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
@@ -16,7 +19,8 @@ function createWindow() {
     });
     mainWindow.loadFile('index.html');
     mainWindow.maximize();
-    ipcMain.on('userMessage', async (event, history) => {
+    
+    ipcMain.on('userMsg', async (event, history) => {
         try {
             const stream = await openai.chat.completions.create({
                 model: MODEL,
@@ -24,14 +28,22 @@ function createWindow() {
                 stream: true
             });
             for await (const part of stream) {
-                if (part.choices && 
-                    part.choices[0] && 
-                    part.choices[0].delta && 
-                    part.choices[0].delta.content) {
-                    event.sender.send(
-                                    'llmMessage', 
-                                    part.choices[0].delta.content
-                    );
+                const msg = part.choices[0].delta.content;
+                if (msg) {
+                    console.log('|' + msg + '|');
+                    if (expectSingleBacktick) {
+                        expectSingleBacktick = false;
+                    } else if (msg === '```') {
+                        languageIdentifier = true;
+                        event.sender.send('backticks', null, false);
+                        insideCodeBlock = true;
+                    } else if (msg === '``') {
+                        expectSingleBacktick = true;
+                        event.sender.send('backticks', null, insideCodeBlock);
+                        insideCodeBlock = !insideCodeBlock;
+                    } else {
+                        event.sender.send('llmMsg', msg, insideCodeBlock);
+                    }
                 }
             }
         } catch (error) {
@@ -40,6 +52,7 @@ function createWindow() {
         }
     });
 }
+
 app.whenReady().then(createWindow);
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
