@@ -19,8 +19,7 @@ function createWindow() {
     });
     mainWindow.loadFile('index.html');
     mainWindow.maximize();
-    
-    ipcMain.on('userMsg', async (event, history) => {
+    ipcMain.on('prompt', async (event, history) => {
         try {
             const stream = await openai.chat.completions.create({
                 model: MODEL,
@@ -28,29 +27,32 @@ function createWindow() {
                 stream: true
             });
             for await (const part of stream) {
-                const msg = part.choices[0].delta.content;
-                if (msg) {
-                    console.log('|' + msg + '|');
-                    if (expectSingleBacktick) {
-                        expectSingleBacktick = false;
-                    } else if (msg === '```') {
-                        languageIdentifier = true;
-                        event.sender.send('backticks', null, false);
-                        insideCodeBlock = true;
-                    } else if (msg === '``') {
-                        expectSingleBacktick = true;
-                        event.sender.send('backticks', null, insideCodeBlock);
-                        insideCodeBlock = !insideCodeBlock;
-                    } else {
-                        event.sender.send('llmMsg', msg, insideCodeBlock);
-                    }
-                }
+                handle(event, part.choices[0].delta.content);
             }
         } catch (error) {
             console.error('Error in OpenAI request:', error);
             throw error;
         }
     });
+}
+
+function handle(event, msg) {
+    if (msg) {
+        console.log('|' + msg + '|');
+        if (expectSingleBacktick) {
+            expectSingleBacktick = false;
+        } else if (msg === '```') {
+            languageIdentifier = true;
+            event.sender.send('backticks', null, false);
+            insideCodeBlock = true;
+        } else if (msg === '``') {
+            expectSingleBacktick = true;
+            event.sender.send('backticks', null, insideCodeBlock);
+            insideCodeBlock = !insideCodeBlock;
+        } else {
+            event.sender.send('content', msg, insideCodeBlock);
+        }
+    }
 }
 
 app.whenReady().then(createWindow);

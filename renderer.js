@@ -19,10 +19,10 @@ document.getElementById('form').addEventListener('submit', async (event) => {
     const prompt = document.createElement('p');
     prompt.textContent = input;
     messages.appendChild(prompt);
-    ipcRenderer.send('userMsg', [{ role: 'user', content: input }]);
+    ipcRenderer.send('prompt', [{ role: 'user', content: input }]);
     response = document.createElement('div');
     messages.appendChild(response);
-    
+
     startParagraph();
 });
 
@@ -34,7 +34,7 @@ ipcRenderer.on('backticks', (event, msg, insideCodeBlock) => {
     }
 });
 
-ipcRenderer.on('llmMsg', (event, msg, insideCodeBlock) => {
+ipcRenderer.on('content', (event, msg, insideCodeBlock) => {
     let container;
     if (insideCodeBlock) {
         container = document.getElementById("pre" + (preIdCounter - 1));
