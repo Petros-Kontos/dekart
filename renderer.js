@@ -26,7 +26,7 @@ document.getElementById('form').addEventListener('submit', async (event) => {
     startParagraph();
 });
 
-ipcRenderer.on('backticks', (event, msg, insideCodeBlock) => {
+ipcRenderer.on('new-section', (event, msg, insideCodeBlock) => {
     if (insideCodeBlock) {
         startParagraph();
     } else {

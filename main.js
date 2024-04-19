@@ -3,8 +3,8 @@ const { OpenAI } = require('openai');
 const MODEL = 'gpt-4-1106-preview';
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY});
 
-let expectSingleBacktick = false;
 let insideCodeBlock = false;
+let skipNext = false;
 
 function createWindow() {
     const mainWindow = new BrowserWindow({
@@ -39,16 +39,14 @@ function createWindow() {
 function handle(event, msg) {
     if (msg) {
         console.log('|' + msg + '|');
-        if (expectSingleBacktick) {
-            expectSingleBacktick = false;
-        } else if (msg === '```') {
-            languageIdentifier = true;
-            event.sender.send('backticks', null, false);
-            insideCodeBlock = true;
-        } else if (msg === '``') {
-            expectSingleBacktick = true;
-            event.sender.send('backticks', null, insideCodeBlock);
+        if (skipNext) {
+            skipNext = false;
+        } else if (msg === '```' || msg === '``') {
+            event.sender.send('new-section', null, insideCodeBlock);
             insideCodeBlock = !insideCodeBlock;
+            if (msg === '``') {
+                skipNext = true;
+            }
         } else {
             event.sender.send('content', msg, insideCodeBlock);
         }
