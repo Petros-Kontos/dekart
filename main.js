@@ -5,6 +5,7 @@ const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY});
 
 let insideCodeBlock = false;
 let expectClosingBacktick = false;
+let firstMsg = false;
 
 function createWindow() {
     const mainWindow = new BrowserWindow({
@@ -20,6 +21,7 @@ function createWindow() {
     mainWindow.loadFile('index.html');
     mainWindow.maximize();
     ipcMain.on('prompt', async (event, history) => {
+        firstMsg =true;
         try {
             const stream = await openai.chat.completions.create({
                 model: MODEL,
@@ -39,16 +41,33 @@ function createWindow() {
 function handle(event, msg) {
     if (msg) {
         console.log('|' + msg + '|');
+        if (msg.includes('\n')) {
+            console.log('NEWLINE DETECTED!')
+        }
         if (expectClosingBacktick && msg.includes('`')) {
             expectClosingBacktick = false;
-        } else if (msg === '```' || msg === '``') {
-            event.sender.send('new-section', null, insideCodeBlock);
-            insideCodeBlock = !insideCodeBlock;
-            if (msg === '``') {
-                expectClosingBacktick = true;
+        } else if (msg === '```') {
+            event.sender.send('start-code-block', null);
+            insideCodeBlock = true;
+        } else if (msg === '``') {
+            if (insideCodeBlock) {
+                event.sender.send('start-paragraph', null);
+            } else {
+                event.sender.send('start-code-block', null);
             }
-        } else {
-            event.sender.send('content', msg, insideCodeBlock);
+            insideCodeBlock = !insideCodeBlock;
+            expectClosingBacktick = true;
+        }
+         else {
+            if (insideCodeBlock) {
+                event.sender.send('append-to-code-block', msg);    
+            } else {
+                if (firstMsg) {
+                    event.sender.send('start-paragraph', null);
+                    firstMsg = false;
+                }
+                event.sender.send('append-to-paragraph', msg);
+            }
         }
     }
 }
