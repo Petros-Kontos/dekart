@@ -41,9 +41,6 @@ function createWindow() {
 function handle(event, msg) {
     if (msg) {
         console.log('|' + msg + '|');
-        if (msg.includes('\n')) {
-            console.log('NEWLINE DETECTED!')
-        }
         if (expectClosingBacktick && msg.includes('`')) {
             expectClosingBacktick = false;
         } else if (msg === '```') {
@@ -68,6 +65,9 @@ function handle(event, msg) {
                 }
                 event.sender.send('append-to-paragraph', msg);
             }
+        }
+        if (msg.includes('\n') && !insideCodeBlock) {
+            event.sender.send('start-paragraph', null);
         }
     }
 }
