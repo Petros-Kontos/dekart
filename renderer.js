@@ -1,8 +1,8 @@
 const { ipcRenderer } = require('electron');
 
 let response;
-let preIdCounter = 0;
-let pIdCounter = 0;
+let paragraph = null;
+let codeBlock = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementsByTagName('textarea')[0].focus();
@@ -38,21 +38,19 @@ document.getElementsByTagName('form')[0].addEventListener('submit', async (event
 });
 
 ipcRenderer.on('start-paragraph', (event, msg) => {
-    const p = document.createElement('p');
-    p.id = "p" + pIdCounter++;
-    response.appendChild(p);
+    paragraph = document.createElement('p');
+    response.appendChild(paragraph);
 });
 
 ipcRenderer.on('start-code-block', (event, msg) => {
-    const pre = document.createElement('pre');
-    pre.id = "pre" + preIdCounter++;
-    response.appendChild(pre);
+    codeBlock = document.createElement('pre');
+    response.appendChild(codeBlock);
 });
 
 ipcRenderer.on('append-to-paragraph', (event, msg) => {
-    document.getElementById("p" + (pIdCounter - 1)).textContent += msg;
+    paragraph.textContent += msg;
 });
 
 ipcRenderer.on('append-to-code-block', (event, msg) => {
-    document.getElementById("pre" + (preIdCounter - 1)).textContent += msg;
+    codeBlock.textContent += msg;
 });
