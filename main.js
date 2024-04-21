@@ -4,7 +4,7 @@ const MODEL = 'gpt-4-1106-preview';
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY});
 
 let insideCodeBlock = false;
-let skipNext = false;
+let expectClosingBacktick = false;
 
 function createWindow() {
     const mainWindow = new BrowserWindow({
@@ -39,13 +39,13 @@ function createWindow() {
 function handle(event, msg) {
     if (msg) {
         console.log('|' + msg + '|');
-        if (skipNext) {
-            skipNext = false;
+        if (expectClosingBacktick && msg.includes('`')) {
+            expectClosingBacktick = false;
         } else if (msg === '```' || msg === '``') {
             event.sender.send('new-section', null, insideCodeBlock);
             insideCodeBlock = !insideCodeBlock;
             if (msg === '``') {
-                skipNext = true;
+                expectClosingBacktick = true;
             }
         } else {
             event.sender.send('content', msg, insideCodeBlock);
