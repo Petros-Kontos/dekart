@@ -1,9 +1,9 @@
-import OpenAI from 'openai';
-import { MODEL} from './constants.js';
+const OpenAI = require('openai');
+const { MODEL } = require('./constants.js');
 
 const openai = new OpenAI();
 
-export async function askLM(history) {
+async function askLM(history) {
     const stream = await openai.chat.completions.create({
         model: MODEL,
         messages: history,
@@ -11,3 +11,5 @@ export async function askLM(history) {
     });
     return stream;
 }
+
+module.exports = { askLM }
