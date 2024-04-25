@@ -1,5 +1,4 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
-const { OpenAI } = require('openai');
 const { askLM } = require('./lm.js')
 const path = require('path');
 
