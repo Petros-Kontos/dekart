@@ -13,13 +13,9 @@ function createWindow() {
     const mainWindow = new BrowserWindow({
         width: 1200,
         height: 600,
-        icon: path.join(__dirname, '../img/letter-d-retro.png'),
-        // title: 'Dekart',
-        // frame: false,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
-            // enableRemoteModule: true
         }
     });
     mainWindow.loadFile('./src/index.html');
