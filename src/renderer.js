@@ -32,7 +32,7 @@ document.getElementsByTagName('form')[0].addEventListener('submit', async (event
     const prompt = document.createElement('p');
     prompt.textContent = input
     messages.appendChild(prompt);
-    ipcRenderer.send('prompt', [{ role: 'user', content: input }]);
+    ipcRenderer.send('prompt', input );
     response = document.createElement('div');
     messages.appendChild(response);
 });
