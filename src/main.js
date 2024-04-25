@@ -1,8 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
-const { askLM } = require('./lm.js')
-const path = require('path');
-
-const history = [];
+const { setupDB, insertToDB, selectFromDB } = require('./db.js');
+const { askLM } = require('./lm.js');
 
 let insideCodeBlock = false;
 let expectClosingBacktick = false;
@@ -21,8 +19,9 @@ function createWindow() {
     mainWindow.loadFile('./src/index.html');
     mainWindow.maximize();
     ipcMain.on('prompt', async (event, prompt) => {
+        await insertToDB('user', prompt);
+        let history = await selectFromDB();
         firstMsg =true;
-        history.push({ role: 'user', content: prompt});
         try {
             const stream = await askLM(history);
             for await (const part of stream) {
@@ -33,7 +32,7 @@ function createWindow() {
                 }
             }
             if (responseBuffer.trim() !== '') {
-                history.push({ role: 'assistant', content: responseBuffer });
+                await insertToDB('assistant', responseBuffer);
                 responseBuffer = '';
             }
         } catch (error) {
@@ -75,6 +74,10 @@ function handle(event, msg) {
     }
 }
 
+async function init() {
+    await setupDB();
+}
+init();
 app.whenReady().then(createWindow);
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
