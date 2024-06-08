@@ -4,7 +4,7 @@ const openai = new OpenAI();
 
 async function askLM(history) {
     const stream = await openai.chat.completions.create({
-        model: 'gpt-4-1106-preview',
+        model: 'gpt-4o',
         messages: history,
         stream: true,
     });
