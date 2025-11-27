@@ -59,6 +59,9 @@ func CallLLM(content string) (string, error) {
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 	prompt, err := reader.ReadString('\n')
+	if err != nil {
+		panic(err)
+	}
 	response, err := CallLLM(prompt)
 	if err != nil {
 		panic(err)
