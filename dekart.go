@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -56,7 +57,9 @@ func CallLLM(content string) (string, error) {
 }
 
 func main() {
-	response, err := CallLLM("Hi")
+	reader := bufio.NewReader(os.Stdin)
+	prompt, err := reader.ReadString('\n')
+	response, err := CallLLM(prompt)
 	if err != nil {
 		panic(err)
 	}
